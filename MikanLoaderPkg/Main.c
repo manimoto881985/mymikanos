@@ -189,7 +189,7 @@ void CopyLoadSegments(Elf64_Ehdr* ehdr) {
     CopyMem((VOID*)phdr[i].p_vaddr, (VOID*)segm_in_file, phdr[i].p_filesz);
 
     UINTN remain_bytes = phdr[i].p_memsz - phdr[i].p_filesz;
-    SetMem((VOID*)phdr[i].p_vaddr + phdr[i].p_filesz, remain_bytes, 0);
+    SetMem((VOID*)(phdr[i].p_vaddr + phdr[i].p_filesz), remain_bytes, 0);
   }
 }
 
@@ -299,7 +299,7 @@ EFI_STATUS EFIAPI UefiMain(
   UINT64 kernel_first_addr, kernel_last_addr;
   CalcLoadAddressRange(kernel_ehdr, &kernel_first_addr, &kernel_last_addr);
 
-  UINTN num_pages = (kernel_last_addr - kernel_first_addr + 0xfff ) / 0x1000; // ?
+  UINTN num_pages = (kernel_last_addr - kernel_first_addr + 0xfff) / 0x1000;
   status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
                               num_pages, &kernel_first_addr);
   if (EFI_ERROR(status)) {
@@ -310,7 +310,7 @@ EFI_STATUS EFIAPI UefiMain(
 
   // #@@range_begin(copy_segments)
   CopyLoadSegments(kernel_ehdr);
-  Print(L"Kernel: 0x%0lx - 0x0lx\n", kernel_first_addr, kernel_last_addr);
+  Print(L"Kernel: 0x%0lx - 0x%0lx\n", kernel_first_addr, kernel_last_addr);
 
   status = gBS->FreePool(kernel_buffer);
   if (EFI_ERROR(status)) {

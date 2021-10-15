@@ -25,7 +25,7 @@ class ArrayQueue {
      * write_pos_ points to a blank position.
      * count_ is the number of elements available.
      */
-    size_t capacity_;
+    const size_t capacity_;
 };
 
 template <typename T>
