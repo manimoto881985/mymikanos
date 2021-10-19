@@ -88,7 +88,7 @@ class ArrayWrapper {
     Iterator begin() { return array_; }
     Iterator end() { return array_ + size_; }
     ConstIterator cbegin() const { return array_; }
-    ConstIterator cend() { return array_ + size_; }
+    ConstIterator cend() const { return array_ + size_; }
 
     ValueType& operator [](size_t index) { return array_[index]; }
 
