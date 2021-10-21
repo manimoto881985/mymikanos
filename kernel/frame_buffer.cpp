@@ -67,8 +67,6 @@ Error FrameBuffer::Copy(Vector2D<int> dst_pos, const FrameBuffer& src,
     return MAKE_ERROR(Error::kUnknownPixelFormat);
   }
 
-  // const auto dst_size = FrameBufferSize(config_);
-  // const auto src_size = FrameBufferSize(src.config_);
   const Rectangle<int> src_area_shifted{dst_pos, src_area.size};
   const Rectangle<int> src_outline{dst_pos - src_area.pos, FrameBufferSize(src.config_)};
   const Rectangle<int> dst_outline{{0, 0}, FrameBufferSize(config_)};

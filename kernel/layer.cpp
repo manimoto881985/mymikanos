@@ -1,6 +1,8 @@
 #include "layer.hpp"
 
 #include <algorithm>
+#include "console.hpp"
+#include "logger.hpp"
 
 Layer::Layer(unsigned int id) : id_{id} {
 }
@@ -93,27 +95,6 @@ void LayerManager::Move(unsigned int id, Vector2D<int> new_pos) {
   Draw(id);
 }
 
-Layer* LayerManager::FindLayerByPosition(Vector2D<int> pos, unsigned int exclude_id) const {
-  auto pred = [pos, exclude_id](Layer* layer) {
-    if (layer->ID() == exclude_id) {
-      return false;
-    }
-    const auto& win = layer->GetWindow();
-    if (!win) {
-      return false;
-    }
-    const auto win_pos = layer->GetPosition();
-    const auto win_end_pos = win_pos + win->Size();
-    return win_pos.x <= pos.x && pos.x < win_end_pos.x &&
-           win_pos.y <= pos.y && pos.y < win_end_pos.y;
-  };
-  auto it = std::find_if(layer_stack_.rbegin(), layer_stack_.rend(), pred);
-  if (it == layer_stack_.rend()) {
-    return nullptr;
-  }
-  return *it;
-}
-
 void LayerManager::MoveRelative(unsigned int id, Vector2D<int> pos_diff) {
   auto layer = FindLayer(id);
   const auto window_size = layer->GetWindow()->Size();
@@ -156,6 +137,27 @@ void LayerManager::Hide(unsigned int id) {
   }
 }
 
+Layer* LayerManager::FindLayerByPosition(Vector2D<int> pos, unsigned int exclude_id) const {
+  auto pred = [pos, exclude_id](Layer* layer) {
+    if (layer->ID() == exclude_id) {
+      return false;
+    }
+    const auto& win = layer->GetWindow();
+    if (!win) {
+      return false;
+    }
+    const auto win_pos = layer->GetPosition();
+    const auto win_end_pos = win_pos + win->Size();
+    return win_pos.x <= pos.x && pos.x < win_end_pos.x &&
+           win_pos.y <= pos.y && pos.y < win_end_pos.y;
+  };
+  auto it = std::find_if(layer_stack_.rbegin(), layer_stack_.rend(), pred);
+  if (it == layer_stack_.rend()) {
+    return nullptr;
+  }
+  return *it;
+}
+
 Layer* LayerManager::FindLayer(unsigned int id) {
   auto pred = [id](const std::unique_ptr<Layer>& elem) {
     return elem->ID() == id;
@@ -167,4 +169,42 @@ Layer* LayerManager::FindLayer(unsigned int id) {
   return it->get();
 }
 
+namespace {
+  FrameBuffer* screen;
+}
+
 LayerManager* layer_manager;
+
+void InitializeLayer() {
+  const auto screen_size = ScreenSize();
+
+  auto bgwindow = std::make_shared<Window>(
+      screen_size.x, screen_size.y, screen_config.pixel_format);
+  DrawDesktop(*bgwindow->Writer());
+
+  auto console_window = std::make_shared<Window>(
+      Console::kColumns * 8, Console::kRows * 16, screen_config.pixel_format);
+  console->SetWindow(console_window);
+
+  screen = new FrameBuffer;
+  if (auto err = screen->Initialize(screen_config)) {
+    Log(kError, "failed to initialize frame buffer: %s at %s:%d\n",
+        err.Name(), err.File(), err.Line());
+    exit(1);
+  }
+
+  layer_manager = new LayerManager;
+  layer_manager->SetWriter(screen);
+
+  auto bglayer_id = layer_manager->NewLayer()
+    .SetWindow(bgwindow)
+    .Move({0, 0})
+    .ID();
+  console->SetLayerID(layer_manager->NewLayer()
+    .SetWindow(console_window)
+    .Move({0, 0})
+    .ID());
+
+  layer_manager->UpDown(bglayer_id, 0);
+  layer_manager->UpDown(console->LayerID(), 1);
+}
