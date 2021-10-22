@@ -316,7 +316,7 @@ namespace pci {
 
 void InitializePCI() {
   if (auto err = pci::ScanAllBus()) {
-    Log(kDebug, "ScanAllBus: %s\n", err.Name());
+    Log(kError, "ScanAllBus: %s\n", err.Name());
     exit(1);
   }
 
