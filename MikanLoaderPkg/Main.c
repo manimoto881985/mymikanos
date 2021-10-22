@@ -279,7 +279,6 @@ EFI_STATUS EFIAPI UefiMain(
   EFI_FILE_INFO* file_info = (EFI_FILE_INFO*)file_info_buffer;
   UINTN kernel_file_size = file_info->FileSize;
 
-  // #@@range_begin(read_kernel)
   VOID* kernel_buffer;
   status = gBS->AllocatePool(EfiLoaderData, kernel_file_size, &kernel_buffer);
   if (EFI_ERROR(status)) {
@@ -292,9 +291,7 @@ EFI_STATUS EFIAPI UefiMain(
     Print(L"error: %r", status);
     Halt();
   }
-  // #@@range_end(read_kernel)
 
-  // #@@range_begin(alloc_pages)
   Elf64_Ehdr* kernel_ehdr = (Elf64_Ehdr*)kernel_buffer;
   UINT64 kernel_first_addr, kernel_last_addr;
   CalcLoadAddressRange(kernel_ehdr, &kernel_first_addr, &kernel_last_addr);
@@ -306,9 +303,7 @@ EFI_STATUS EFIAPI UefiMain(
     Print(L"failed to allocate pages: %r\n", status);
     Halt();
   }
-  // #@@range_end(alloc_pages)
 
-  // #@@range_begin(copy_segments)
   CopyLoadSegments(kernel_ehdr);
   Print(L"Kernel: 0x%0lx - 0x%0lx\n", kernel_first_addr, kernel_last_addr);
 
@@ -317,9 +312,7 @@ EFI_STATUS EFIAPI UefiMain(
     Print(L"failed to free pool: %r\n", status);
     Halt();
   }
-  // #@@range_end(copy_segments)
 
-  // #@@range_begin(exit_bs)
   status = gBS->ExitBootServices(image_handle, memmap.map_key);
   if (EFI_ERROR(status)) {
     status = GetMemoryMap(&memmap);
@@ -333,11 +326,9 @@ EFI_STATUS EFIAPI UefiMain(
       Halt();
     }
   }
-  // #@@range_end(exit_bs)
 
   UINT64 entry_addr = *(UINT64*)(kernel_first_addr + 24);
 
-  // #@@range_begin(pass_frame_buffer_config)
   struct FrameBufferConfig config = {
     (UINT8*)gop->Mode->FrameBufferBase,
     gop->Mode->Info->PixelsPerScanLine,
@@ -357,11 +348,20 @@ EFI_STATUS EFIAPI UefiMain(
       Halt();
   }
 
+  VOID* acpi_table = NULL;
+  for (UINTN i = 0; i < system_table->NumberOfTableEntries; ++i) {
+    if (CompareGuid(&gEfiAcpiTableGuid,
+                    &system_table->ConfigurationTable[i].VendorGuid)) {
+      acpi_table = system_table->ConfigurationTable[i].VendorTable;
+      break;
+    }
+  }
+
   typedef void EntryPointType(const struct FrameBufferConfig*,
-                              const struct MemoryMap*);
+                              const struct MemoryMap*,
+                              const VOID*);
   EntryPointType* entry_point = (EntryPointType*)entry_addr;
-  entry_point(&config, &memmap);
-  // #@@range_end(pass_frame_buffer_config)
+  entry_point(&config, &memmap, acpi_table);
 
   Print(L"All done\n");
 
