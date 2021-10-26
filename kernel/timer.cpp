@@ -14,20 +14,31 @@ namespace {
 void InitializeLAPICTimer() {
   timer_manager = new TimerManager;
 
+  divide_config = 0b1011; // divide 1:1
+  lvt_timer = 0b001 << 16; // masked, one-shot
+
   StartLAPICTimer();
   acpi::WaitMilliseconds(100);
   const auto elapsed = LAPICTimerElapsed();
   StopLAPICTimer();
 
-  lapic_timer_frep = static_cast<unsigned long>(elapsed) * 10;
+  lapic_timer_freq = static_cast<unsigned long>(elapsed) * 10;
 
   divide_config = 0b1011; // divide 1:1
   lvt_timer = (0b010 << 16) | InterruptVector::kLAPICTimer; // not-masked, periodic
-  initial_count = lapic_timer_frep / kTimerFreq;
+  initial_count = lapic_timer_freq / kTimerFreq;
 }
 
 void StartLAPICTimer() {
   initial_count = kCountMax;
+}
+
+uint32_t LAPICTimerElapsed() {
+  return kCountMax - current_count;
+}
+
+void StopLAPICTimer() {
+  initial_count = 0;
 }
 
 Timer::Timer(unsigned long timeout, int value)
@@ -40,14 +51,6 @@ TimerManager::TimerManager() {
 
 void TimerManager::AddTimer(const Timer& timer) {
   timers_.push(timer);
-}
-
-uint32_t LAPICTimerElapsed() {
-  return kCountMax - current_count;
-}
-
-void StopLAPICTimer() {
-  initial_count = 0;
 }
 
 bool TimerManager::Tick() {
@@ -79,7 +82,7 @@ bool TimerManager::Tick() {
 }
 
 TimerManager* timer_manager;
-unsigned long lapic_timer_frep;
+unsigned long lapic_timer_freq;
 
 void LAPICTimerOnInterrupt() {
   const bool task_timer_timeout = timer_manager->Tick();
