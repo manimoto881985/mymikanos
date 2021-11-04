@@ -197,7 +197,7 @@ EFI_STATUS ReadFile(EFI_FILE_PROTOCOL* file, VOID** buffer) {
   EFI_STATUS status;
 
   UINTN file_info_size = sizeof(EFI_FILE_INFO) + sizeof(CHAR16) * 12;
-  UINTN file_info_buffer[file_info_size];
+  UINT8 file_info_buffer[file_info_size];
   status = file->GetInfo(
       file, &gEfiFileInfoGuid,
       &file_info_size, file_info_buffer);
@@ -236,7 +236,7 @@ EFI_STATUS OpenBlockIoProtocolForLoadedImage(
       loaded_image->DeviceHandle,
       &gEfiBlockIoProtocolGuid,
       (VOID**)block_io,
-      image_handle,
+      image_handle, // agent handle
       NULL,
       EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
