@@ -13,7 +13,7 @@
 
 namespace {
 
-  std::vector<char*> MarkArgVector(char* command, char* first_arg) {
+  std::vector<char*> MakeArgVector(char* command, char* first_arg) {
     std::vector<char*> argv;
     argv.push_back(command);
     if (!first_arg) {
@@ -400,7 +400,7 @@ Error Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry, char* command
     return MAKE_ERROR(Error::kSuccess);
   }
 
-  auto argv = MarkArgVector(command, first_arg);
+  auto argv = MakeArgVector(command, first_arg);
   if (auto err = LoadELF(elf_header)) {
     return err;
   }
