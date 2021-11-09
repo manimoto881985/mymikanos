@@ -23,7 +23,7 @@ namespace {
         return MAKE_ERROR(Error::kFull);
       }
 
-      argv[argc] = &argbuf[argbuf_len];
+      argv[argc] = &argbuf[argbuf_index];
       ++argc;
       strcpy(&argbuf[argbuf_index], s);
       argbuf_index += strlen(s) + 1;
@@ -119,6 +119,7 @@ WithError<size_t> SetupPageMap(
     if (err) {
       return { num_4kpages, err };
     }
+    page_map[entry_index].bits.writable = 1;
     page_map[entry_index].bits.user = 1;
 
     if (page_map_level == 1) {
@@ -446,8 +447,8 @@ Error Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry, char* command
   }
 
   auto entry_addr = elf_header->e_entry;
-  CallApp(argc.value, argv, 3 << 3 | 3, 4 << 3 | 3, entry_addr,
-      stack_frame_addr.value + 4096 -8);
+  CallApp(argc.value, argv, 4 << 3 | 3, 3 << 3 | 3, entry_addr,
+      stack_frame_addr.value + 4096 - 8);
 
   /*
   char s[64];
