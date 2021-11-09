@@ -249,6 +249,6 @@ IntHandlerLAPICTimer: ; void IntHandlerLAPICTimer();
     iretq
 
 global LoadTR
-LoadTR:  ; LoadTR(uint16_t sel);
+LoadTR:  ; void LoadTR(uint16_t sel);
     ltr di
     ret
